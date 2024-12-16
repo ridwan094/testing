@@ -1,8 +1,7 @@
 pipeline {
     agent any
     environment {
-        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
-        DOCKER_IMAGE = 'rainover922/myapp:latest'
+        DOCKER_IMAGE = 'rainover922/myapp:latest' // Nama Docker image
     }
     stages {
         // Stage 1: Clone Repository
@@ -21,25 +20,50 @@ pipeline {
             }
         }
 
-        // Stage 2: Build Docker Image
+        // Stage 2: Docker Login
+        stage('Docker Login') {
+            steps {
+                echo "Logging in to Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
+                }
+                echo "Docker login successful!"
+            }
+        }
+
+        // Stage 3: Build Docker Image
         stage('Build Image') {
             steps {
                 echo "Building Docker image..."
                 sh '''
-                docker --version
                 docker build -t $DOCKER_IMAGE .
                 '''
-                echo "Docker image successfully built!"
+                echo "Docker image built successfully!"
+            }
+        }
+
+        // Stage 4: Push Docker Image
+        stage('Push Image') {
+            steps {
+                echo "Pushing Docker image to Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    docker push $DOCKER_IMAGE
+                    '''
+                }
+                echo "Docker image pushed successfully!"
             }
         }
     }
 
     post {
         success {
-            echo 'Stages 1 and 2 completed successfully!'
+            echo 'Build, Docker Login, and Push completed successfully!'
         }
         failure {
-            echo 'Build failed during Clone Repository or Build Image.'
+            echo 'Build or Docker operation failed.'
         }
     }
 }
