@@ -1,7 +1,8 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'rainover922/myapp:latest' // Nama Docker Image
+        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
+        DOCKER_IMAGE = 'rainover922/myapp:latest'
     }
     stages {
         // Stage 1: Clone Repository
@@ -10,10 +11,10 @@ pipeline {
                 echo "Cloning repository..."
                 checkout scm: [
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']], // Branch main
+                    branches: [[name: '*/main']],
                     userRemoteConfigs: [[
                         url: 'https://github.com/ridwan094/testing',
-                        credentialsId: 'github-credentials' // Ganti dengan ID kredensial Jenkins
+                        credentialsId: 'github-credentials'
                     ]]
                 ]
                 echo "Repository successfully cloned!"
@@ -25,13 +26,7 @@ pipeline {
             steps {
                 echo "Building Docker image..."
                 sh '''
-                # Cek apakah Docker sudah tersedia
-                if ! command -v docker &> /dev/null; then
-                    echo "Docker not found. Exiting..."
-                    exit 1
-                fi
-                
-                # Build Docker Image
+                docker --version
                 docker build -t $DOCKER_IMAGE .
                 '''
                 echo "Docker image successfully built!"
