@@ -1,69 +1,42 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'rainover922/myapp:latest' // Nama Docker image
+        DOCKER_IMAGE = 'rainover922/myapp:latest'
     }
     stages {
-        // Stage 1: Clone Repository
         stage('Clone Repository') {
             steps {
-                echo "Cloning repository..."
-                checkout scm: [
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/ridwan094/testing',
-                        credentialsId: 'github-credentials'
-                    ]]
-                ]
-                echo "Repository successfully cloned!"
+                echo 'Cloning repository...'
+                git 'https://github.com/ridwan094/testing'
+                echo 'Repository successfully cloned!'
             }
         }
-
-        // Stage 2: Docker Login
         stage('Docker Login') {
             steps {
-                echo "Logging in to Docker Hub..."
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                echo 'Logging in to Docker Hub...'
+                withCredentials([string(credentialsId: 'dockerhub-token', variable: 'DOCKER_PASS')]) {
                     sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    echo $DOCKER_PASS | docker login -u rainover922 --password-stdin
                     '''
                 }
-                echo "Docker login successful!"
             }
         }
-
-        // Stage 3: Build Docker Image
         stage('Build Image') {
             steps {
-                echo "Building Docker image..."
+                echo 'Building Docker image...'
                 sh '''
                 docker build -t $DOCKER_IMAGE .
                 '''
-                echo "Docker image built successfully!"
-            }
-        }
-
-        // Stage 4: Push Docker Image
-        stage('Push Image') {
-            steps {
-                echo "Pushing Docker image to Docker Hub..."
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    docker push $DOCKER_IMAGE
-                    '''
-                }
-                echo "Docker image pushed successfully!"
+                echo 'Docker image built successfully!'
             }
         }
     }
-
     post {
         success {
-            echo 'Build, Docker Login, and Push completed successfully!'
+            echo 'Build successful!'
         }
         failure {
-            echo 'Build or Docker operation failed.'
+            echo 'Build failed!'
         }
     }
 }
