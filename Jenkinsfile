@@ -4,10 +4,16 @@ pipeline {
         DOCKER_IMAGE = 'rainover922/myapp:latest'
     }
     stages {
+        stage('Clean Workspace') {
+            steps {
+                echo 'Cleaning workspace...'
+                cleanWs()
+            }
+        }
         stage('Clone Repository') {
             steps {
                 echo 'Cloning repository...'
-                git 'https://github.com/ridwan094/testing'
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/ridwan094/testing'
                 echo 'Repository successfully cloned!'
             }
         }
